@@ -37,6 +37,9 @@ class OmokGame(Entity):
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.ai_future = None
         self.finished = False
+        self.preview_enabled = False
+        self.pending_ai_move = None
+        self.candidate_markers = []
         self.ink = color.rgb(232, 237, 235)
         self.muted = color.rgb(154, 173, 176)
         self.accent = color.rgb(113, 206, 189)
@@ -102,10 +105,17 @@ class OmokGame(Entity):
                                     position=(-.13, -.10), scale=.85, color=self.muted)
         self.response_label = Text('', parent=self.panel, position=(-.13, -.145),
                                    scale=.8, color=self.muted)
-        Text('Five in a row wins.\nGreen ring: last AI move.', parent=self.panel,
-             position=(-.13, -.25), scale=.78, color=self.muted)
+        self.preview_button = Button(parent=self.panel, text='AI preview: Off',
+                                     position=(.015, -.205), scale=(.29, .045),
+                                     color=color.rgb(65, 85, 91), on_click=self.toggle_preview)
+        self.candidate_label = Text('Model scores, not win probabilities.', parent=self.panel,
+                                    position=(-.13, -.247), scale=.65, color=self.muted)
+        self.confirm_button = Button(parent=self.panel, text='Play AI move',
+                                     position=(.015, -.345), scale=(.29, .045),
+                                     color=self.accent, text_color=color.rgb(27, 45, 46),
+                                     on_click=self.confirm_ai_move, enabled=False)
         self.restart_button = Button(parent=self.panel, text='New game',
-                                     position=(.015, -.37), scale=(.29, .065),
+                                     position=(.015, -.415), scale=(.29, .055),
                                      color=self.accent, text_color=color.rgb(27, 45, 46),
                                      highlight_color=color.rgb(147, 224, 210),
                                      on_click=self.restart_game)
@@ -133,6 +143,7 @@ class OmokGame(Entity):
         if self.ai_future is not None:
             self.ai_future.cancel()
             self.ai_future = None
+        self._clear_preview()
         self.game.reset()
         self.finished = False
         for detail in self.stone_details:
@@ -174,8 +185,11 @@ class OmokGame(Entity):
         output = model(input, training=False).numpy().reshape((20, 20))
         # 합법적인 빈칸만 선택하여 기존 돌을 덮어쓰지 않는다.
         output[board != 0] = -np.inf
-        y, x = np.unravel_index(np.argmax(output), output.shape)
-        return int(x), int(y), perf_counter() - started
+        # 동점이면 기존 argmax와 같은 앞쪽 위치를 우선하며, 빈 교점만 후보로 반환한다.
+        valid = np.flatnonzero(board.ravel() == 0)
+        ranked = valid[np.argsort(-output.ravel()[valid], kind='stable')[:3]]
+        candidates = [(int(i % 20), int(i // 20), float(output.ravel()[i])) for i in ranked]
+        return candidates, perf_counter() - started
 
     def update(self):
         if self.ai_future is None or not self.ai_future.done():
@@ -183,13 +197,56 @@ class OmokGame(Entity):
         future = self.ai_future
         self.ai_future = None
         try:
-            x, y, elapsed = future.result()
+            candidates, elapsed = future.result()
         except Exception as error:
             self.finished = True
             self.turn_label.text = 'AI unavailable'
             self.turn_detail.text = 'Select New game to retry.'
             print(f'AI inference failed: {error}')
             return
+        self.pending_ai_move = (candidates, elapsed)
+        if self.preview_enabled:
+            self._show_preview(candidates)
+        else:
+            self.confirm_ai_move()
+
+    def toggle_preview(self):
+        self.preview_enabled = not self.preview_enabled
+        self.preview_button.text = 'AI preview: On' if self.preview_enabled else 'AI preview: Off'
+        self.preview_button.color = color.rgb(52, 108, 100) if self.preview_enabled else color.rgb(65, 85, 91)
+        if not self.preview_enabled and self.pending_ai_move is not None:
+            self.confirm_ai_move()
+
+    def _clear_preview(self):
+        self.pending_ai_move = None
+        for marker in self.candidate_markers:
+            destroy(marker)
+        self.candidate_markers.clear()
+        self.confirm_button.enabled = False
+        self.candidate_label.text = 'Model scores, not win probabilities.'
+
+    def _show_preview(self, candidates):
+        # sigmoid 원점수이며 승률이나 후보 간 정규화된 확률이 아니다.
+        lines = []
+        for rank, (x, y, score) in enumerate(candidates, 1):
+            marker = Entity(position=(x, 19 - y, -.15))
+            Entity(parent=marker, model=Circle(32, mode='line', thickness=2), scale=.8,
+                   color=self.accent if rank == 1 else self.ink)
+            Text(str(rank), parent=marker, origin=(0, 0), scale=23,
+                 color=color.rgb(25, 54, 51), z=-.01)
+            self.candidate_markers.append(marker)
+            lines.append(f'{rank}. {chr(65 + x)}{y + 1}   Score {score:.4f}')
+        self.candidate_label.text = '\n'.join(lines)
+        self.turn_label.text = 'AI preview'
+        self.turn_detail.text = 'Model scores / not win probability'
+        self.confirm_button.enabled = True
+
+    def confirm_ai_move(self):
+        if self.pending_ai_move is None or self.finished:
+            return
+        candidates, elapsed = self.pending_ai_move
+        x, y, _ = candidates[0]
+        self._clear_preview()
         self.game.put(x=x, y=y)
         self._show_stone(x, y, 2)
         self.last_ai_outline.position = (x, 19 - y, -.12)
