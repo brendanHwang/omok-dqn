@@ -159,10 +159,15 @@ class OmokGame(Entity):
         self.move_label.text = 'Moves   0'
         self.last_move_label.text = 'Last AI move   --'
         self.response_label.text = ''
+        self._request_human_preview()
 
     def play_human(self, x, y):
         if self.finished or self.game.current_player != 1 or self.board.board[y, x] != 0:
             return
+        if self.ai_future is not None:
+            self.ai_future.cancel()
+            self.ai_future = None
+        self._clear_preview()
         # player turn
         self.game.put(x=x, y=y)  # start from top left
         self._show_stone(x, y, 1)
@@ -176,11 +181,11 @@ class OmokGame(Entity):
         self.ai_future = self.executor.submit(self._predict_move, self.board.board.copy())
 
     @staticmethod
-    def _predict_move(board):
+    def _predict_move(board, player=2):
         started = perf_counter()
         # cpu turn
-        # 학습과 같은 관점: 현재 AI의 돌은 +1, 상대의 돌은 -1이다.
-        input = np.where(board == 2, 1, np.where(board == 0, 0, -1))
+        # 학습과 같은 관점: 추천받을 플레이어의 돌은 +1, 상대의 돌은 -1이다.
+        input = np.where(board == player, 1, np.where(board == 0, 0, -1))
         input = np.expand_dims(input, axis=(0, -1)).astype(np.float32)
         output = model(input, training=False).numpy().reshape((20, 20))
         # 합법적인 빈칸만 선택하여 기존 돌을 덮어쓰지 않는다.
@@ -204,6 +209,10 @@ class OmokGame(Entity):
             self.turn_detail.text = 'Select New game to retry.'
             print(f'AI inference failed: {error}')
             return
+        if self.game.current_player == 1:
+            if self.preview_enabled:
+                self._show_preview(candidates)
+            return
         self.pending_ai_move = (candidates, elapsed)
         if self.preview_enabled:
             self._show_preview(candidates)
@@ -214,8 +223,25 @@ class OmokGame(Entity):
         self.preview_enabled = not self.preview_enabled
         self.preview_button.text = 'AI preview: On' if self.preview_enabled else 'AI preview: Off'
         self.preview_button.color = color.rgb(52, 108, 100) if self.preview_enabled else color.rgb(65, 85, 91)
-        if not self.preview_enabled and self.pending_ai_move is not None:
+        if self.preview_enabled:
+            self._request_human_preview()
+        elif self.pending_ai_move is not None:
             self.confirm_ai_move()
+        elif self.game.current_player == 1:
+            if self.ai_future is not None:
+                self.ai_future.cancel()
+                self.ai_future = None
+            self._clear_preview()
+            if not self.finished:
+                self.turn_label.text = 'Your turn'
+                self.turn_detail.text = 'Place a black stone.'
+
+    def _request_human_preview(self):
+        if not self.preview_enabled or self.finished or self.game.current_player != 1:
+            return
+        self.turn_detail.text = 'Finding your candidate moves...'
+        # 흑 차례에는 흑 관점으로 계산하며, 추천 결과가 자동 착수로 이어지지 않는다.
+        self.ai_future = self.executor.submit(self._predict_move, self.board.board.copy(), 1)
 
     def _clear_preview(self):
         self.pending_ai_move = None
@@ -237,9 +263,11 @@ class OmokGame(Entity):
             self.candidate_markers.append(marker)
             lines.append(f'{rank}. {chr(65 + x)}{y + 1}   Score {score:.4f}')
         self.candidate_label.text = '\n'.join(lines)
-        self.turn_label.text = 'AI preview'
-        self.turn_detail.text = 'Model scores / not win probability'
-        self.confirm_button.enabled = True
+        human_turn = self.game.current_player == 1
+        self.turn_label.text = 'Your preview' if human_turn else 'AI preview'
+        self.turn_detail.text = ('Choose any empty intersection.' if human_turn
+                                 else 'Model scores / not win probability')
+        self.confirm_button.enabled = not human_turn
 
     def confirm_ai_move(self):
         if self.pending_ai_move is None or self.finished:
@@ -258,6 +286,7 @@ class OmokGame(Entity):
         self.game.next()
         self.turn_label.text = 'Your turn'
         self.turn_detail.text = 'Place a black stone.'
+        self._request_human_preview()
 
     def _check_end(self):
         winner = self.game.check_won()
