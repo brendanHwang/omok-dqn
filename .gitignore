@@ -5,3 +5,5 @@ dataset
 
 .venv/
 __pycache__/
+
+.venv-dqn/

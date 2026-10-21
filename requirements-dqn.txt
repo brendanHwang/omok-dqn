@@ -1,0 +1,3 @@
+# macOS Apple Silicon / Python 3.12에서 MPS 학습을 검증한 버전
+numpy==2.5.4
+torch==2.14.1

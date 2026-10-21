@@ -1,0 +1,203 @@
+{
+  "model": "/Users/brendan/Documents/\u1112\u1161\u11a8\u1100\u116d/\ub300\ud559\uc6d0/\u1100\u1165\u11ab\u110e\u116e\u11a8\u1100\u1169\u11bc\u1112\u1161\u11a8/3.\u1112\u1161\u11a8\u1109\u1173\u11b8/\u1100\u1161\u11bc\u1112\u116a\u1112\u1161\u11a8\u1109\u1173\u11b8/omok-ai/models/dqn-v1/gomoku_dqn.pt",
+  "opponent": "random",
+  "games": 10,
+  "wins": 10,
+  "losses": 0,
+  "draws": 0,
+  "mean_dqn_cpu_inference_ms": 0.38992019108263776,
+  "protocol": "paired central two-stone openings, alternate black/white; no search or training",
+  "results": [
+    {
+      "game": 1,
+      "dqn_player": 1,
+      "winner": 1,
+      "outcome": "win",
+      "moves": [
+        151,
+        227,
+        132,
+        341,
+        113,
+        70,
+        94,
+        10,
+        75
+      ]
+    },
+    {
+      "game": 2,
+      "dqn_player": 2,
+      "winner": 2,
+      "outcome": "win",
+      "moves": [
+        151,
+        227,
+        256,
+        248,
+        144,
+        269,
+        186,
+        290,
+        31,
+        311
+      ]
+    },
+    {
+      "game": 3,
+      "dqn_player": 1,
+      "winner": 1,
+      "outcome": "win",
+      "moves": [
+        147,
+        207,
+        128,
+        149,
+        109,
+        259,
+        90,
+        142,
+        71
+      ]
+    },
+    {
+      "game": 4,
+      "dqn_player": 2,
+      "winner": 2,
+      "outcome": "win",
+      "moves": [
+        147,
+        207,
+        332,
+        186,
+        316,
+        228,
+        281,
+        249,
+        362,
+        270
+      ]
+    },
+    {
+      "game": 5,
+      "dqn_player": 1,
+      "winner": 1,
+      "outcome": "win",
+      "moves": [
+        171,
+        190,
+        152,
+        289,
+        133,
+        70,
+        114,
+        344,
+        95
+      ]
+    },
+    {
+      "game": 6,
+      "dqn_player": 2,
+      "winner": 2,
+      "outcome": "win",
+      "moves": [
+        171,
+        190,
+        261,
+        211,
+        38,
+        232,
+        118,
+        253,
+        65,
+        274
+      ]
+    },
+    {
+      "game": 7,
+      "dqn_player": 1,
+      "winner": 1,
+      "outcome": "win",
+      "moves": [
+        211,
+        168,
+        192,
+        386,
+        173,
+        291,
+        154,
+        367,
+        135
+      ]
+    },
+    {
+      "game": 8,
+      "dqn_player": 2,
+      "winner": 2,
+      "outcome": "win",
+      "moves": [
+        211,
+        168,
+        112,
+        149,
+        255,
+        130,
+        243,
+        111,
+        303,
+        151,
+        46,
+        172,
+        207,
+        131,
+        261,
+        110,
+        333,
+        132,
+        266,
+        152,
+        182,
+        150,
+        187,
+        171,
+        134,
+        153
+      ]
+    },
+    {
+      "game": 9,
+      "dqn_player": 1,
+      "winner": 1,
+      "outcome": "win",
+      "moves": [
+        171,
+        148,
+        152,
+        62,
+        133,
+        110,
+        114,
+        57,
+        95
+      ]
+    },
+    {
+      "game": 10,
+      "dqn_player": 2,
+      "winner": 2,
+      "outcome": "win",
+      "moves": [
+        171,
+        148,
+        90,
+        127,
+        342,
+        106,
+        212,
+        85,
+        35,
+        64
+      ]
+    }
+  ]
+}
