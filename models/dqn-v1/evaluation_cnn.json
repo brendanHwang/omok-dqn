@@ -1,5 +1,5 @@
 {
-  "model": "/Users/brendan/Documents/\u1112\u1161\u11a8\u1100\u116d/\ub300\ud559\uc6d0/\u1100\u1165\u11ab\u110e\u116e\u11a8\u1100\u1169\u11bc\u1112\u1161\u11a8/3.\u1112\u1161\u11a8\u1109\u1173\u11b8/\u1100\u1161\u11bc\u1112\u116a\u1112\u1161\u11a8\u1109\u1173\u11b8/omok-ai/models/dqn-v1/gomoku_dqn.pt",
+  "model": "models/dqn-v1/gomoku_dqn.pt",
   "opponent": "cnn",
   "games": 10,
   "wins": 1,
