@@ -39,12 +39,14 @@ def evaluate(args):
     if args.opponent=='cnn':
         worker=subprocess.Popen([str(ROOT/'.venv/bin/python'),'-u',str(Path(__file__).resolve()),'--cnn-worker'],
                                 stdin=subprocess.PIPE,stdout=subprocess.PIPE,text=True)
+    from tactical_dqn import TacticalDQN
+    tactics=TacticalDQN(q_weight=0. if args.agent=='tactical-only' else .03)
     results=[]; latencies=[]
     try:
         for game in range(args.games):
             board=np.zeros((20,20),dtype=np.int8)
             # 각 흑·백 쌍은 같은 중앙 두 수로 시작하여 완전 결정론적 한 판 반복을 피한다.
-            opening=np.random.default_rng(2026+game//2).choice(25,size=2,replace=False)
+            opening=np.random.default_rng(args.opening_seed+game//2).choice(25,size=2,replace=False)
             moves=[]
             for i,a in enumerate(opening):
                 x,y=int(a%5+7),int(a//5+7)
@@ -56,8 +58,12 @@ def evaluate(args):
                     s=np.where(board==player,1,np.where(board==0,0,-1)).astype(np.float32)
                     with torch.no_grad():
                         q=model(torch.from_numpy(s[None,None])).numpy().ravel()
+                    if args.agent=='tactical-only':
+                        q.fill(0.)
                     q[board.ravel()!=0]=-np.inf
-                    action=int(q.argmax()); latencies.append(perf_counter()-started)
+                    action=(int(q.argmax()) if args.agent=='dqn'
+                            else tactics.choose(board,player,q))
+                    latencies.append(perf_counter()-started)
                 elif worker:
                     worker.stdin.write(json.dumps({'board':board.tolist(),'player':player})+'\n')
                     worker.stdin.flush()
@@ -79,12 +85,16 @@ def evaluate(args):
     finally:
         if worker:
             worker.stdin.close(); worker.wait(timeout=30)
-    report={'model':str(args.model),'opponent':args.opponent,'games':args.games,
+    report={'model':str(args.model),'opponent':args.opponent,'agent':args.agent,'opening_seed':args.opening_seed,'games':args.games,
             'wins':sum(r['outcome']=='win' for r in results),
             'losses':sum(r['outcome']=='loss' for r in results),
             'draws':sum(r['outcome']=='draw' for r in results),
             'mean_dqn_cpu_inference_ms':float(np.mean(latencies)*1000),
-            'protocol':'paired central two-stone openings, alternate black/white; no search or training',
+            'p95_agent_ms':float(np.percentile(latencies,95)*1000),
+            'max_agent_ms':float(np.max(latencies)*1000),
+            'search':None if args.agent=='dqn' else {'depth':tactics.depth,'width':tactics.width,
+                                                   'replies':tactics.replies,'q_weight':tactics.q_weight},
+            'protocol':'paired central two-stone openings, alternate black/white; fixed model; agent field specifies search',
             'results':results}
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(report,indent=2))
@@ -97,6 +107,8 @@ if __name__=='__main__':
     p.add_argument('--model',type=Path,default=ROOT/'models/dqn-v1/gomoku_dqn.pt')
     p.add_argument('--opponent',choices=['cnn','random'],default='cnn')
     p.add_argument('--games',type=int,default=10)
+    p.add_argument('--agent',choices=['dqn','tactical-dqn','tactical-only'],default='dqn')
+    p.add_argument('--opening-seed',type=int,default=2026)
     p.add_argument('--output',type=Path,default=ROOT/'models/dqn-v1/evaluation_cnn.json')
     args=p.parse_args()
     if args.cnn_worker: cnn_worker()

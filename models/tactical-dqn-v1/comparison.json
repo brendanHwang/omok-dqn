@@ -1,0 +1,26 @@
+{
+  "baseline_unseen": {
+    "wins": 5,
+    "losses": 15,
+    "draws": 0,
+    "games": 20,
+    "opening_seed": 9000,
+    "mean_dqn_cpu_inference_ms": 0.5710543112152002
+  },
+  "evaluation_unseen": {
+    "wins": 16,
+    "losses": 4,
+    "draws": 0,
+    "games": 20,
+    "opening_seed": 9000,
+    "mean_dqn_cpu_inference_ms": 252.00651599896668
+  },
+  "evaluation_search_only": {
+    "wins": 13,
+    "losses": 7,
+    "draws": 0,
+    "games": 20,
+    "opening_seed": 9000,
+    "mean_dqn_cpu_inference_ms": 249.48842754702258
+  }
+}

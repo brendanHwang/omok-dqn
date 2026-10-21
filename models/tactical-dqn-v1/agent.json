@@ -1,0 +1,22 @@
+{
+  "agent": "tactical-dqn",
+  "q_checkpoint": "../dqn-v1/gomoku_dqn.pt",
+  "q_sha256": "fde6e9c73fa352eebcbf3c57b0aea96cf4c7049d52c3c125be699a5cd6278cc1",
+  "weights_changed": false,
+  "depth_plies": 4,
+  "forced_defense_extension_plies": 3,
+  "root_width": 12,
+  "reply_width": 8,
+  "q_weight": 0.03,
+  "development_opening_seed": 2026,
+  "unseen_opening_seed": 9000,
+  "opponent": "models/20201213_202430.h5",
+  "rules": "20x20 Freestyle, five or more wins",
+  "optimization_check": {
+    "positions": 20,
+    "seed": 42,
+    "same_selected_moves": true,
+    "before_seconds": 7.459909875760786,
+    "after_seconds": 3.0745537913171574
+  }
+}
