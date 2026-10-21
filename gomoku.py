@@ -4,7 +4,7 @@ class Board():
     def __init__(self, w, h):
         self.w = w
         self.h = h
-        self.board = np.zeros((self.h, self.w), dtype=np.int)
+        self.board = np.zeros((self.h, self.w), dtype=np.int8)
 
     def __repr__(self):
         string = ''
@@ -21,7 +21,7 @@ class Gomoku():
         self.won_player = 0
 
     def reset(self):
-        self.board.board = 0
+        self.board.board.fill(0)
         self.current_player = 1
         self.won_player = 0
 
@@ -35,6 +35,10 @@ class Gomoku():
                     self.board.board[rand_y][rand_x] = self.current_player
                     break
         else:
+            if not (0 <= x < self.board.w and 0 <= y < self.board.h):
+                raise ValueError("착수 위치가 판 밖입니다")
+            if self.board.board[y][x] != 0:
+                raise ValueError("이미 돌이 있는 위치입니다")
             self.board.board[y][x] = self.current_player
 
     def next(self):

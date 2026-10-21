@@ -1,0 +1,3 @@
+numpy==2.5.4
+tensorflow==2.21.0
+ursina==3.2.2

@@ -2,3 +2,6 @@ __pycache__
 .vscode
 dataset
 .DS_Store
+
+.venv/
+__pycache__/
